@@ -1,0 +1,79 @@
+
+alias LEVEL_COUNT 12;
+alias userIdType uint64;
+
+
+struct EVENT_PLAYER_JOIN:0 {
+    userId : userIdType
+    userName : string
+    dinoSkinId : uint8
+}
+
+
+struct EVENT_PLAYER_LEAVE {
+    userId : userIdType
+    
+}
+
+
+/* 
+This is a multiline
+comment which can
+span multiple lines 
+*/
+
+struct ENTITY_DINO {
+    id :   uint64
+    x: float32
+    y: float32
+    vspd: float32
+    hspd :   float32
+    stateId: uint8
+}
+
+// Single line comments
+struct ENTITY_COIN @453 {
+    id : uint64 
+    x  : float32
+    y  : float32
+    vspd :           float32
+    hspd : float32
+    stateId : uint8
+    lookVector : {
+        x: float16
+        y: float16
+        z: float16 
+    }
+    health : {
+        hunger :uint8,
+        thirst: uint8,
+        sleep : uint8
+    }
+    anotherVector :  Vector    
+}
+
+struct Vector {
+    x @0: float16
+    y @1: float16
+    z @2: flaot16
+}
+
+struct DATA_SAVE_GAME @0x34fa {
+    levelData: Vector[LEVEL_COUNT]
+    playTime: uint32[3] // fixed size array 
+    levelScore uint16[] // variable sized array (vector)
+}
+
+union VersionedSaveData @625 <
+    SAVE_FILE_V1 @0,
+    SAVE_FILE_V2 @1,
+    SAVE_FILE_V3 @2,
+>
+
+// You can create versioned structs by wrapping a Union inside a struct
+struct SaveFile {
+    data : VersionedSaveData
+}
+
+union Event <EVENT_PLAYER_JOIN, EVENT_PLAYER_LEAVE>
+union Entity <ENTITY_DINO, ENTITY_COIN>
