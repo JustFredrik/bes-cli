@@ -46,25 +46,32 @@ enum class SyntaxErrorType {
     RedeclarationOfIdentifier
 };
 
-class SyntaxError : public std::runtime_error {
+class UnexpectedTokenError : public std::runtime_error {
 public:
-    SyntaxError(const std::string& msg, int line, int col) 
-        : std::runtime_error("Syntax Error:" + msg + " (" + std::to_string(line) + ":" + std::to_string(col) + ")") {}
-};
-
-class ErrorUnexpectedToken : public std::runtime_error {
-public:
-    ErrorUnexpectedToken(const std::string_view got, const TokenType expected, int line, int col) 
-        : std::runtime_error("Syntax Error: Unexpected token, got '" + std::string(got) + "' expected '" + std::string(token_type_to_string(expected)) + "' ("  + std::to_string(line) + ":" + std::to_string(col) + ")") {}
+    UnexpectedTokenError(const std::string_view got, const TokenType expected, int line, int col) 
+        : std::runtime_error("Unexpected token, got '" + std::string(got) + "' expected '" + std::string(token_type_to_string(expected)) + "' ("  + std::to_string(line) + ":" + std::to_string(col) + ")") {}
   
-    ErrorUnexpectedToken(const std::string_view got, const std::vector<TokenType> expected, int line, int col) 
-    : std::runtime_error("Syntax Error: Unexpected token, got '" + std::string(got) + "' expected '" + joinWithCommas(mapTokenTypeArrayToStrings(expected), "or") + "' ("  + std::to_string(line) + ":" + std::to_string(col) + ")") {}
+    UnexpectedTokenError(const std::string_view got, const std::vector<TokenType> expected, int line, int col) 
+    : std::runtime_error("Unexpected token, got '" + std::string(got) + "' expected '" + joinWithCommas(mapTokenTypeArrayToStrings(expected), "or") + "' ("  + std::to_string(line) + ":" + std::to_string(col) + ")") {}
     
 };
 
-class ErrorDuplicateName : public std::runtime_error {
+class DuplicateNameError : public std::runtime_error {
 public:
-    ErrorDuplicateName(const Token& t) 
-        : std::runtime_error("Syntax Error: Duplicate name in declaration '" + std::string(t.lexeme) + "' ("  + std::to_string(t.line_number) + ":" + std::to_string(t.column_number) + ")") {}
- 
+    DuplicateNameError(const Token& t) 
+        : std::runtime_error("Duplicate name in declaration '" + std::string(t.lexeme) + "' ("  + std::to_string(t.line_number) + ":" + std::to_string(t.column_number) + ")") {}
 };
+
+class DuplicateStaticIdError : public std::runtime_error {
+public:
+    DuplicateStaticIdError(const Token& t) 
+        : std::runtime_error("Duplicate static id in declaration @'" + std::string(t.lexeme) + "' ("  + std::to_string(t.line_number) + ":" + std::to_string(t.column_number) + ")") {}
+};
+
+class UndeclaredReferenceError : public std::runtime_error {
+public:
+    UndeclaredReferenceError(const Token& t) 
+        : std::runtime_error("Trying to reference '" + std::string(t.lexeme) + "' before declaration ("  + std::to_string(t.line_number) + ":" + std::to_string(t.column_number) + ")") {}
+};
+
+

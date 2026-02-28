@@ -1,0 +1,25 @@
+struct SAVE_FILE_V1 @0x34fa {
+    name: string
+}
+
+struct SAVE_FILE_V2 @0x34fb {
+    name: string
+    level: uint32
+}
+
+struct SAVE_FILE_V3 @0x34fc {
+    name: string
+    level: uint32
+    exp: uint32
+}
+
+union VersionedSaveData @625 <
+    SAVE_FILE_V1 @0,
+    SAVE_FILE_V2 @1,
+    SAVE_FILE_V3 @2,
+>
+
+// You can create versioned structs by wrapping a Union inside a struct
+struct SaveFile {
+    data : VersionedSaveData
+}
