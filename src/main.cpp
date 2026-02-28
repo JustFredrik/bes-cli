@@ -52,5 +52,6 @@ void validate_schema(int argc, char **argv, int& i) {
     for (const auto& token : tokens) {
         std::cout << std::setw(18) << token.lexeme << " | " << std::setw(16) << token_type_to_string(token.type) << " (" << token.line_number << ": " << token.column_number << ")\n";
     }
-    parse(tokens);
+    auto ast = parse(tokens);
+    std::cout << ast;
 }

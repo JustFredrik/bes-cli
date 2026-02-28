@@ -9,7 +9,7 @@
 #include "errors.cpp"
 
 uint16_t fnv1a_hash_u16(const std::string& s);
-FieldDeclaration parse_field_declaration(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, bool>& nameLookup, std::unordered_map<int, bool>& uidLookup, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
+FieldDeclaration parse_field_declaration(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, bool>& nameLookup, std::unordered_map<int, bool>& uidLookup, int& fieldIdInc, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
 FieldDataType parse_field_data_type(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
 std::vector<UnionMemberDeclaration> parse_union_members(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
 
@@ -206,9 +206,10 @@ uint16_t fnv1a_hash_u16(const std::string& s) {
 std::vector<FieldDeclaration> parse_field_declarations(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, DeclarationPointer> declarationLookup) {
     std::vector<FieldDeclaration> fields = {};
     std::unordered_map<std::string, bool> nameLookup;
+    int fieldIdInc = 0;
     std::unordered_map<int, bool> uidLookup;
     while (i < tokens.size() && tokens[i].type != TokenType::RightCurlyBrace) {
-        fields.push_back(parse_field_declaration(tokens, i, nameLookup, uidLookup, declarationLookup));
+        fields.push_back(std::move(parse_field_declaration(tokens, i, nameLookup, uidLookup, fieldIdInc, declarationLookup)));
         consume_trailing_seperator(tokens, i);
     }
     consume(tokens, i, TokenType::RightCurlyBrace);
@@ -220,11 +221,12 @@ FieldDeclaration parse_field_declaration(
     int& i, 
     std::unordered_map<std::string, bool>& nameLookup,
     std::unordered_map<int, bool>& uidLookup,
+    int& fieldIdInc,
     std::unordered_map<std::string, DeclarationPointer> declarationLookup
 ) 
     {
     std::string_view fieldName = consume_name_declaration(tokens, i, nameLookup).lexeme;
-    uint16_t uid = parse_uid(tokens, i, uidLookup, fieldName);
+    uint16_t uid = parse_uid(tokens, i, uidLookup, fieldIdInc);
     consume(tokens, i, TokenType::Colon);
     FieldDataType dataType = parse_field_data_type(tokens, i, declarationLookup);
 
@@ -232,15 +234,17 @@ FieldDeclaration parse_field_declaration(
 }
 
 FieldDataType parse_anonymous_union(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, DeclarationPointer> declarationLookup) {
-        return FieldDataType{AnonymousUnion{
+    AnonymousUnion u {
         parse_union_members(tokens, i, declarationLookup),
-    }};
+    };    
+    return FieldDataType{std::make_unique<AnonymousUnion>(std::move(u))};
 }
 
 FieldDataType parse_anonymous_struct(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, DeclarationPointer> declarationLookup) {
-    return FieldDataType{AnonymousStruct{
+    AnonymousStruct s {
         parse_field_declarations(tokens, i, declarationLookup)
-    }};
+    };
+    return FieldDataType{std::make_unique<AnonymousStruct>(std::move(s))};
 }
 
 FieldDataType parse_field_data_type(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, DeclarationPointer> declarationLookup) {
@@ -277,8 +281,8 @@ FieldDataType parse_field_data_type(std::vector<Token>& tokens, int& i, std::uno
 UnionMemberDeclaration parse_union_member(std::vector<Token>& tokens, int& i, std::unordered_map<int, bool>& uidLookup, int& uidInc, std::unordered_map<std::string, DeclarationPointer> declarationLookup) {
     FieldDataType dataType = parse_field_data_type(tokens, i, declarationLookup);
     int uid = parse_uid(tokens, i, uidLookup, uidInc);
-    return UnionMemberDeclaration{dataType, uid};
     uidInc = uid+1;
+    return UnionMemberDeclaration{std::move(dataType), uid};
 }
 
 
@@ -314,7 +318,7 @@ AST parse(std::vector<Token>& tokens) {
             consume(tokens, i, TokenType::LeftCurlyBrace);
             s.fields = parse_field_declarations(tokens, i, root.declarationLookup);
             root.declarationLookup[std::string(s.name)] = &s;
-            root.structDeclarations.push_back(s);
+            root.structDeclarations.push_back(std::move(s));
         
         } else if (t.lexeme == "union") {
             UnionDeclaration u;
@@ -323,7 +327,7 @@ AST parse(std::vector<Token>& tokens) {
             consume(tokens, i, TokenType::LessThan);
             u.members = parse_union_members(tokens, i, root.declarationLookup);
             root.declarationLookup[std::string(u.name)] = &u;
-            root.unionDeclarations.push_back(u);
+            root.unionDeclarations.push_back(std::move(u));
         } else if (t.type == TokenType::EndOfFile) {
             return root;
         } 
