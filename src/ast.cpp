@@ -22,11 +22,18 @@ enum class PrimitiveDataType {
     Void,
 };
 
+enum class ListType {
+    FixedLength,
+    DynamicLength,
+};
+
 enum class DeclarationType {
     Struct,
     Union
 };
 
+struct FixedLengthList;
+struct DynamicLengthList;
 struct StructDeclaration;
 struct AnonymousStruct;
 struct NamedDeclaredReference;
@@ -35,35 +42,6 @@ struct AnonymousUnion;
 struct FieldDeclaration;
 struct UnionMemberDeclaration;
 struct AST;
-
-using FieldDataType = std::variant<
-    PrimitiveDataType, 
-    std::unique_ptr<AnonymousStruct>, 
-    std::unique_ptr<AnonymousUnion>,
-    NamedDeclaredReference
->;
-
-std::ostream& operator<<(std::ostream& os, const PrimitiveDataType& dt);
-std::ostream& operator<<(std::ostream& os, const DeclarationType& t);
-std::ostream& operator<<(std::ostream& os, const NamedDeclaredReference& ref);
-std::ostream& operator<<(std::ostream& os, const FieldDataType& dataType);
-std::ostream& operator<<(std::ostream& os, const FieldDeclaration& field);
-std::ostream& operator<<(std::ostream& os, const StructDeclaration& s);
-std::ostream& operator<<(std::ostream& os, const AnonymousStruct& s);
-std::ostream& operator<<(std::ostream& os, const UnionMemberDeclaration& member);
-std::ostream& operator<<(std::ostream& os, const AnonymousUnion& u);
-std::ostream& operator<<(std::ostream& os, const UnionDeclaration& u);
-
-
-struct StructDeclaration {
-    std::string_view name;
-    std::vector<FieldDeclaration> fields;
-    int uid;
-};
-
-struct AnonymousStruct {
-    std::vector<FieldDeclaration> fields;
-};
 
 using DeclarationPointer = std::variant<
     std::monostate, // Invalid default value for when accessing map
@@ -76,6 +54,47 @@ struct NamedDeclaredReference {
     DeclarationType type;
     DeclarationPointer decPointer;
     int uid;
+};
+
+using FieldDataType = std::variant<
+    PrimitiveDataType, 
+    NamedDeclaredReference,
+    std::unique_ptr<AnonymousStruct>, 
+    std::unique_ptr<AnonymousUnion>,
+    std::unique_ptr<FixedLengthList>,
+    std::unique_ptr<DynamicLengthList>
+>;
+
+std::ostream& operator<<(std::ostream& os, const FixedLengthList& dt);
+std::ostream& operator<<(std::ostream& os, const DynamicLengthList& dt);
+std::ostream& operator<<(std::ostream& os, const PrimitiveDataType& dt);
+std::ostream& operator<<(std::ostream& os, const DeclarationType& t);
+std::ostream& operator<<(std::ostream& os, const NamedDeclaredReference& ref);
+std::ostream& operator<<(std::ostream& os, const FieldDataType& dataType);
+std::ostream& operator<<(std::ostream& os, const FieldDeclaration& field);
+std::ostream& operator<<(std::ostream& os, const StructDeclaration& s);
+std::ostream& operator<<(std::ostream& os, const AnonymousStruct& s);
+std::ostream& operator<<(std::ostream& os, const UnionMemberDeclaration& member);
+std::ostream& operator<<(std::ostream& os, const AnonymousUnion& u);
+std::ostream& operator<<(std::ostream& os, const UnionDeclaration& u);
+
+struct FixedLengthList {
+    int length;
+    FieldDataType dataType;
+};
+
+struct DynamicLengthList {
+    FieldDataType dataType;
+};
+
+struct StructDeclaration {
+    std::string_view name;
+    std::vector<FieldDeclaration> fields;
+    int uid;
+};
+
+struct AnonymousStruct {
+    std::vector<FieldDeclaration> fields;
 };
 
 struct UnionDeclaration {
@@ -108,6 +127,16 @@ struct AST {
     std::vector<StructDeclaration> structDeclarations;
 };
 
+
+std::ostream& operator<<(std::ostream& os, const FixedLengthList& l) {
+    os << l.dataType << "[" << l.length << "]";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const DynamicLengthList& l) {
+    os << l.dataType << "[]";
+    return os;
+}
 
 std::ostream& operator<<(std::ostream& os, const PrimitiveDataType& dt) {
     switch(dt) {
@@ -161,6 +190,10 @@ std::ostream& operator<<(std::ostream& os, const NamedDeclaredReference& ref) {
 std::ostream& operator<<(std::ostream& os, const FieldDataType& dataType) {
     if(const auto* p = std::get_if<PrimitiveDataType>(&dataType)) {
         os << *p;
+    } else if (const auto* p = std::get_if<std::unique_ptr<FixedLengthList>>(&dataType)) {
+        os << **p;
+    } else if (const auto* p = std::get_if<std::unique_ptr<DynamicLengthList>>(&dataType)) {
+        os << **p;
     } else if (const auto* p = std::get_if<std::unique_ptr<AnonymousStruct>>(&dataType)) {
         os << **p;
     } else if (const auto* p = std::get_if<std::unique_ptr<AnonymousUnion>>(&dataType)) {

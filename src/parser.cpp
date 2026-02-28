@@ -192,6 +192,18 @@ Token& consume_name_declaration(std::vector<Token>& tokens, int& i, std::unorder
     return tokens[i++];
 }
 
+std::tuple<ListType, int> consume_list_brackets(std::vector<Token>& tokens, int& i) {
+    ListType type = ListType::FixedLength;
+    consume(tokens, i, TokenType::LeftSquareBracket);
+    if (match(tokens, i, TokenType::Number)) {
+        auto lengthToken = consume(tokens, i, TokenType::Number);
+        consume(tokens, i, TokenType::RightSquareBracket);
+        return {ListType::FixedLength, stoi(std::string(lengthToken.lexeme))};
+    }
+    consume(tokens, i, TokenType::RightSquareBracket);
+    return {ListType::DynamicLength, NULL};
+}
+
 
 uint16_t fnv1a_hash_u16(const std::string& s) {
     uint32_t hash = 0x811c9dc5;
@@ -249,32 +261,48 @@ FieldDataType parse_anonymous_struct(std::vector<Token>& tokens, int& i, std::un
 
 FieldDataType parse_field_data_type(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, DeclarationPointer> declarationLookup) {
     Token fieldData = consume(tokens, i, {TokenType::Identifier, TokenType::DataType, TokenType::LessThan, TokenType::LeftCurlyBrace});
+    FieldDataType d;
     if (fieldData.type == TokenType::Identifier) {
         auto & declarationPointer = declarationLookup[std::string(fieldData.lexeme)];
         if(std::holds_alternative<std::monostate>(declarationPointer)) {
             throw UndeclaredReferenceError(fieldData);
         } else if(std::holds_alternative<StructDeclaration*>(declarationPointer)) {
-            return FieldDataType{NamedDeclaredReference{
+            d = FieldDataType{NamedDeclaredReference{
                 fieldData.lexeme,
                 DeclarationType::Struct,
                 declarationPointer
             }};
         } else if(std::holds_alternative<UnionDeclaration*>(declarationPointer)) {
-            return FieldDataType{NamedDeclaredReference{
+            d = FieldDataType{NamedDeclaredReference{
                 fieldData.lexeme,
                 DeclarationType::Union,
                 declarationPointer
             }};
         }
     } else if (fieldData.type == TokenType::DataType) {
-        return FieldDataType{PrimitiveDataType::Float32};}
+        d = FieldDataType{PrimitiveDataType::Float32};}
     else if (fieldData.type == TokenType::LessThan) {
-        return parse_anonymous_union(tokens, i, declarationLookup);
+        d = parse_anonymous_union(tokens, i, declarationLookup);
     } else if (fieldData.type == TokenType::LeftCurlyBrace) {
-        return parse_anonymous_struct(tokens, i, declarationLookup);
+        d = parse_anonymous_struct(tokens, i, declarationLookup);
     }
-    // TODO imporve error
-    throw std::runtime_error("Invalid field data type");
+    if (match(tokens, i, TokenType::LeftSquareBracket)) {
+        auto [listType, listLength] = consume_list_brackets(tokens, i);
+        if (listType == ListType::FixedLength) {
+            FixedLengthList l {
+                listLength,
+                std::move(d)
+            };
+            return FieldDataType{std::make_unique<FixedLengthList>(std::move(l))};
+        }
+        if (listType == ListType::DynamicLength) {
+            DynamicLengthList l {
+                std::move(d)
+            };
+            return FieldDataType{std::make_unique<DynamicLengthList>(std::move(l))};
+        }
+    }
+    return d;
 }
 
 
