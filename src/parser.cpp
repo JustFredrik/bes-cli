@@ -8,9 +8,10 @@
 #include "token.cpp"
 #include "errors.cpp"
 
-
 uint16_t fnv1a_hash_u16(const std::string& s);
-
+FieldDeclaration parse_field_declaration(std::vector<Token>& tokens, int& i, std::unordered_map<std::string, bool>& nameLookup, std::unordered_map<int, bool>& uidLookup);
+FieldDataType parse_field_data_type(std::vector<Token>& tokens, int& i);
+std::vector<UnionMemberDeclaration> parse_union_members(std::vector<Token>& tokens, int& i);
 
 struct Alias {
     std::string_view identifierString; // Identifier lexeme to match with
@@ -18,6 +19,28 @@ struct Alias {
     TokenType replacementType;
 };
 
+bool match(std::vector<Token>& tokens, int& i, TokenType type) {
+    return !(i >= tokens.size() || tokens[i].type != type);
+};
+
+bool match(std::vector<Token>& tokens, int& i, std::vector<TokenType>types) {
+    return !(i >= tokens.size() || std::find(types.begin(), types.end(), tokens[i].type) == types.end());
+};
+
+Token& consume(std::vector<Token>& tokens, int& i, TokenType type) {
+    if (i >= tokens.size() || tokens[i].type != type) {
+        throw ErrorUnexpectedToken(tokens[i].lexeme, type, tokens[i].line_number, tokens[i].column_number);
+    }
+    return tokens[i++];
+};
+
+
+Token& consume(std::vector<Token>& tokens, int& i, std::vector<TokenType>types) {
+    if (i >= tokens.size() || std::find(types.begin(), types.end(), tokens[i].type) == types.end()) {
+          throw ErrorUnexpectedToken(tokens[i].lexeme, types, tokens[i].line_number, tokens[i].column_number);
+    }
+    return tokens[i++];
+};
 
 std::vector<Alias> extract_aliases(std::vector<Token>& tokens) {
     std::vector<Alias> aliases;
@@ -84,26 +107,22 @@ void replace_aliases(std::vector<Token>& tokens, std::vector<Alias>& aliases) {
 }
 
 
+void remove_comments(std::vector<Token>& tokens) {
+    int i = 0;
+    while(i < tokens.size()) {
+        while(match(tokens, i, {TokenType::SingleLineComment, TokenType::MultiLineComment})) {
+            consume(tokens, i, {TokenType::SingleLineComment, TokenType::MultiLineComment});
+        }
+        i++;
+    }
+};
+
+
 void pre_process_tokens(std::vector<Token>& tokens) {
     auto aliases = extract_aliases(tokens);
     replace_aliases(tokens, aliases);
+    remove_comments(tokens);
    
-}
-
-
-Token& consume(std::vector<Token>& tokens, int& i, TokenType type) {
-    if (i >= tokens.size() || tokens[i].type != type) {
-        throw ErrorUnexpectedToken(tokens[i].lexeme, type, tokens[i].line_number, tokens[i].column_number);
-    }
-    return tokens[i++];
-}
-
-
-Token& consume(std::vector<Token>& tokens, int& i, std::vector<TokenType>types) {
-    if (i >= tokens.size() || std::find(types.begin(), types.end(), tokens[i].type) == types.end()) {
-          throw ErrorUnexpectedToken(tokens[i].lexeme, types, tokens[i].line_number, tokens[i].column_number);
-    }
-    return tokens[i++];
 }
 
 
@@ -112,20 +131,52 @@ int parse_uid(std::vector<Token>& tokens, int& i, std::unordered_map<int, bool>&
     if (match(tokens, i, TokenType::Annotation)) {
         consume(tokens, i, TokenType::Annotation);
         auto uidToken = consume(tokens, i, {TokenType::Number, TokenType::Hexadecimal});
-        
-        return 1;
+        int uid;
+        if(uidToken.type == TokenType::Hexadecimal) {
+            uid = stoi(std::string(uidToken.lexeme), nullptr, 16);
+        } else {
+            uid = stoi(std::string(uidToken.lexeme), nullptr, 10);
+        }
+        if(uidLookup[uid]) {
+            // TODO Improve error text
+            throw std::runtime_error("Duplicate static id: " + std::string(declarationName));
+        }
+        uidLookup[uid] = true;
+        return uid;
     }
     // Dynamic id
     uint16_t hashDeclarationName = fnv1a_hash_u16(std::string(declarationName));
     while(uidLookup[int(hashDeclarationName)]) {
         hashDeclarationName += 1;
     }
+    uidLookup[int(hashDeclarationName)] = true;
     return hashDeclarationName;
 }
 
-
-bool match(std::vector<Token>& tokens, int& i, TokenType type) {
-    return !(i >= tokens.size() || tokens[i].type != type);
+int parse_uid(std::vector<Token>& tokens, int& i, std::unordered_map<int, bool>& uidLookup, int currentUidInc) {
+    // Static id
+    if (match(tokens, i, TokenType::Annotation)) {
+        consume(tokens, i, TokenType::Annotation);
+        auto uidToken = consume(tokens, i, {TokenType::Number, TokenType::Hexadecimal});
+        int uid;
+        if(uidToken.type == TokenType::Hexadecimal) {
+            uid = stoi(std::string(uidToken.lexeme), nullptr, 16);
+        } else {
+            uid = stoi(std::string(uidToken.lexeme), nullptr, 10);
+        }
+        if(uidLookup[uid]) {
+            // TODO Improve error text
+            throw std::runtime_error("Duplicate static id");
+        }
+        uidLookup[uid] = true;
+        return uid;
+    }
+    // Dynamic id
+    while(uidLookup[currentUidInc]) {
+        currentUidInc += 1;
+    }
+    uidLookup[currentUidInc] = true;
+    return currentUidInc;
 }
 
 
@@ -172,14 +223,16 @@ FieldDeclaration parse_field_declaration(
     return FieldDeclaration(fieldName, uid, std::move(dataType));
 }
 
-// TODO Implement
 FieldDataType parse_anonymous_union(std::vector<Token>& tokens, int& i) {
-    return FieldDataType{AnonymousUnion{}};
+        return FieldDataType{AnonymousUnion{
+        parse_union_members(tokens, i),
+    }};
 }
 
-// TODO Implement
 FieldDataType parse_anonymous_struct(std::vector<Token>& tokens, int& i) {
-    return FieldDataType{AnonymousUnion{}};
+    return FieldDataType{AnonymousStruct{
+        parse_field_declarations(tokens, i),
+    }};
 }
 
 FieldDataType parse_field_data_type(std::vector<Token>& tokens, int& i) {
@@ -201,19 +254,25 @@ FieldDataType parse_field_data_type(std::vector<Token>& tokens, int& i) {
     }
 }
 
-// TODO implement
-UnionMemberDeclaration parse_union_member(std::vector<Token>& tokens, int& i) {
-    
+
+UnionMemberDeclaration parse_union_member(std::vector<Token>& tokens, int& i, std::unordered_map<int, bool>& uidLookup, int& uidInc) {
+    FieldDataType dataType = parse_field_data_type(tokens, i);
+    int uid = parse_uid(tokens, i, uidLookup, uidInc);
+    return UnionMemberDeclaration{dataType, uid};
+    uidInc = uid+1;
 }
 
 std::vector<UnionMemberDeclaration> parse_union_members(std::vector<Token>& tokens, int& i) {
     std::vector<UnionMemberDeclaration> members;
+    int uidInc = 0;
+    std::unordered_map<int, bool> uidLookup = {};
     while (i < tokens.size() && tokens[i].type != TokenType::GreaterThan) {
-        members.push_back(parse_union_member(tokens, i));
+
+        members.push_back(parse_union_member(tokens, i, uidLookup, uidInc));
     }
 }
 
-void parse(std::vector<Token>& tokens) {
+AST parse(std::vector<Token>& tokens) {
     pre_process_tokens(tokens);
 
     AST root;
@@ -223,20 +282,24 @@ void parse(std::vector<Token>& tokens) {
     auto size = tokens.size();
     while ( i < size) {
         if (tokens[i].type == TokenType::Keyword) {
-
             if (tokens[i].lexeme == "struct") {
                 StructDeclaration s;
                 s.name = consume_name_declaration(tokens, i, nameLookup).lexeme;
                 s.uid = parse_uid(tokens, i, uidLookup, s.name);
                 s.fields = parse_field_declarations(tokens, i);
-            
+                root.structDeclarations.push_back(s);
             } else if (tokens[i].lexeme == "union") {
                 UnionDeclaration u;
                 u.name = consume_name_declaration(tokens, i, nameLookup).lexeme;
                 u.uid = parse_uid(tokens, i, uidLookup, u.name);
                 u.members = parse_union_members(tokens, i);
+                root.unionDeclarations.push_back(u);
+            } else {
+                throw std::runtime_error("Unknown keyword: " + std::string(tokens[i].lexeme));
             }
 
         }
     }
+    return root;
 }
+
