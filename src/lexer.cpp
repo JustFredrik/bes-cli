@@ -3,6 +3,8 @@
 #include <string>
 #include "token.cpp"
 
+static constexpr std::string_view eof_lexeme = "[EOF]";
+
 bool both_chars_are_spaces(char left, char right) { return (left == right) && (left == ' '); }
 
 void remove_spaces(std::string& str) {
@@ -175,7 +177,7 @@ std::vector<Token> tokenize(const std::string& input) {
     while (pos < input_length) {
         switch(input[pos]) {
             case NULL:
-                tokens.push_back({TokenType::EndOfFile, line_number, pos - col_acc, std::string_view(&input[pos], 1)});
+                tokens.push_back({TokenType::EndOfFile, line_number, pos - col_acc, eof_lexeme});
                 return tokens;
             case ' ':
             case '\t':

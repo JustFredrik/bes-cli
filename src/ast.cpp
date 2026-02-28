@@ -67,6 +67,7 @@ struct AnonymousStruct {
 
 
 using DeclarationPointer = std::variant<
+    std::monostate, // Invalid default value for when accessing map
     StructDeclaration*,
     UnionDeclaration*
 >;
@@ -125,6 +126,7 @@ struct UnionMemberDeclaration {
 };
 
 struct AST {
+    std::unordered_map<std::string, DeclarationPointer> declarationLookup;
     std::vector<UnionDeclaration> unionDeclarations;
     std::vector<StructDeclaration> structDeclarations;
 };
