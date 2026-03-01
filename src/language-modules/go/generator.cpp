@@ -1,5 +1,5 @@
 #pragma once
-#include "../LanguageGenerator.cpp";
+#include "../LanguageGenerator.cpp"
 
 class GoGenerator : public LanguageGenerator {
 public:

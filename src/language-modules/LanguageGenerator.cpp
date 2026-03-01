@@ -1,5 +1,5 @@
 #pragma once
-#include "../ast.cpp";
+#include "../ast.cpp"
 
 class LanguageGenerator {
 

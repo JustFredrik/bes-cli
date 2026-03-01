@@ -2,10 +2,10 @@
 #include <vector>
 #include <string>
 #include <map>
-#include "ast.cpp";
-#include "./language-modules/go/generator.cpp";
-#include "./language-modules/gml/generator.cpp";
-#include "./language-modules/LanguageGenerator.cpp";
+#include "ast.cpp"
+#include "./language-modules/go/generator.cpp"
+#include "./language-modules/gml/generator.cpp"
+#include "./language-modules/LanguageGenerator.cpp"
 
 struct GeneratedData {
     std::string data;

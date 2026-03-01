@@ -1,5 +1,5 @@
 #pragma once
-#include "../LanguageGenerator.cpp";
+#include "../LanguageGenerator.cpp"
 
 class GmlGenerator : public LanguageGenerator {
 public:

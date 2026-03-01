@@ -6,11 +6,12 @@
 #include "token.cpp"
 #include "lexer.cpp"
 #include "parser.cpp"
-#include "generate.cpp";
+#include "generate.cpp"
 
 namespace fs = std::filesystem;
 
 void validate_schema(int argc, char **argv);
+void generate(int argc, char **argv);
 void init();
 
 int main(int argc, char **argv) {
