@@ -68,5 +68,9 @@ void validate_schema(int argc, char **argv) {
 }
 
 void generate(int argc, char **argv) {
-    std::cout << "Code generation is not implemented yet.";
+    auto file_path = argv[2];
+    std::string content = read_file(file_path);
+    auto tokens = tokenize(content);
+    auto ast = parse(tokens);
+    generate(ast, {"gml", "go"});
 }

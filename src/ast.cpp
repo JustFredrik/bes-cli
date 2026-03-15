@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 enum class PrimitiveDataType {
+    Bool,
     Int8,
     Int16,
     Int32,
@@ -150,6 +151,7 @@ std::ostream& operator<<(std::ostream& os, const PrimitiveDataType& dt) {
         case PrimitiveDataType::Uint64: os << "uint64"; return os;
         case PrimitiveDataType::Float32:os << "float32";return os;
         case PrimitiveDataType::Float64:os << "float64";return os;
+        case PrimitiveDataType::Bool:os    << "bool";   return os;
         case PrimitiveDataType::String: os << "string"; return os;
         case PrimitiveDataType::Void:   os <<  "void";  return os;
     }

@@ -22,6 +22,7 @@ span multiple lines
 */
 
 struct ENTITY_DINO {
+    is_host : bool
     id :   uint64
     x: float32
     y: float32

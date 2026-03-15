@@ -32,6 +32,7 @@ bool is_dataType(const std::string_view& str) {
         str == "uint64" ||
         str == "float32" ||
         str == "float64" ||
+        str == "bool" ||
         str == "string" ||
         str == "void"
     );

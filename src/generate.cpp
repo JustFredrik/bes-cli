@@ -7,14 +7,7 @@
 #include "./language-modules/gml/generator.cpp"
 #include "./language-modules/LanguageGenerator.cpp"
 
-struct GeneratedData {
-    std::string data;
-    std::string languageId;
-    std::string extension;
-};
-
 std::map<std::string, std::unique_ptr<LanguageGenerator>> modules;
-
 
 void populate_language_modules() {
     modules["go"] = std::make_unique<GoGenerator>();
@@ -24,7 +17,9 @@ void populate_language_modules() {
 std::vector<GeneratedData> generate(const AST& ast, std::vector<std::string> languageFlags) {
     std::vector<GeneratedData> data;
     for( const auto& flag : languageFlags) {
-        // TODO implement
+        if(modules.find(flag) != modules.end()) {
+            data.push_back(modules[flag]->generate(ast));
+        }
     }
     return data;
 }
