@@ -25,7 +25,6 @@ bool is_dataType(const std::string_view& str) {
         str == "int8" ||
         str == "int16" ||
         str == "int32" ||
-        str == "int64" ||
         str == "uint8" ||
         str == "uint16" ||
         str == "uint32" ||

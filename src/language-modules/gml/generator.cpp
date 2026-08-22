@@ -101,16 +101,51 @@ public:
         case PrimitiveDataType::Int8:
         case PrimitiveDataType::Int16:
         case PrimitiveDataType::Int32:
-        case PrimitiveDataType::Int64:
         case PrimitiveDataType::Uint8:
         case PrimitiveDataType::Uint16:
         case PrimitiveDataType::Uint32:
         case PrimitiveDataType::Uint64:
+        case PrimitiveDataType::Float16:
         case PrimitiveDataType::Float32:
         case PrimitiveDataType::Float64:
             return "Real";
         case PrimitiveDataType::String:
             return "string";
+        case PrimitiveDataType::Void:
+            return "undefined";
+        default:
+            return "Any";
+        }
+    }
+
+    std::string primitive_data_type_to_gml_buffer_type(const PrimitiveDataType &dt)
+    {
+        switch (dt)
+        {
+        case PrimitiveDataType::Bool:
+            return "buffer_bool";
+        case PrimitiveDataType::Int8:
+            return "buffer_s8";
+        case PrimitiveDataType::Int16:
+            return "buffer_s16";
+        case PrimitiveDataType::Int32:
+            return "buffer_s32";
+        case PrimitiveDataType::Uint8:
+            return "buffer_u8";
+        case PrimitiveDataType::Uint16:
+            return "buffer_u16";
+        case PrimitiveDataType::Uint32:
+            return "buffer_u32";
+        case PrimitiveDataType::Uint64:
+            return "buffer_u64";
+        case PrimitiveDataType::Float16:
+            return "buffer_f16";
+        case PrimitiveDataType::Float32:
+            return "buffer_u32";
+        case PrimitiveDataType::Float64:
+            return "buffer_f64";
+        case PrimitiveDataType::String:
+            return "buffer_string";
         case PrimitiveDataType::Void:
             return "undefined";
         default:

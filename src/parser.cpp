@@ -7,8 +7,8 @@
 #include "ast.cpp"
 #include "token.cpp"
 #include "errors.cpp"
+#include "utils/hash.cpp"
 
-uint16_t fnv1a_hash_u16(const std::string &s);
 FieldDeclaration parse_field_declaration(std::vector<Token> &tokens, int &i, std::unordered_map<std::string, bool> &nameLookup, std::unordered_map<int, bool> &uidLookup, int &fieldIdInc, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
 FieldDataType parse_field_data_type(std::vector<Token> &tokens, int &i, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
 std::vector<UnionMemberDeclaration> parse_union_members(std::vector<Token> &tokens, int &i, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
@@ -236,18 +236,6 @@ std::tuple<ListType, int> consume_list_brackets(std::vector<Token> &tokens, int 
     return {ListType::DynamicLength, NULL};
 }
 
-uint16_t fnv1a_hash_u16(const std::string &s)
-{
-    uint32_t hash = 0x811c9dc5;
-    const uint32_t prime = 0x01000193;
-    for (char c : s)
-    {
-        hash ^= static_cast<uint8_t>(c);
-        hash *= prime;
-    }
-    return static_cast<uint16_t>((hash >> 16) ^ (hash & 0xFFFF));
-}
-
 std::vector<FieldDeclaration> parse_field_declarations(std::vector<Token> &tokens, int &i, std::unordered_map<std::string, DeclarationPointer> declarationLookup)
 {
     std::vector<FieldDeclaration> fields = {};
@@ -439,10 +427,6 @@ PrimitiveDataType string_to_primitive_data_type(const std::string_view &s)
     {
         return PrimitiveDataType::Int32;
     }
-    else if (s == "int64")
-    {
-        return PrimitiveDataType::Int64;
-    }
     else if (s == "uint8")
     {
         return PrimitiveDataType::Uint8;
@@ -458,6 +442,10 @@ PrimitiveDataType string_to_primitive_data_type(const std::string_view &s)
     else if (s == "uint64")
     {
         return PrimitiveDataType::Uint64;
+    }
+    else if (s == "float16")
+    {
+        return PrimitiveDataType::Float16;
     }
     else if (s == "float32")
     {

@@ -12,11 +12,11 @@ enum class PrimitiveDataType {
     Int8,
     Int16,
     Int32,
-    Int64, 
     Uint8,
     Uint16,
     Uint32,
     Uint64,
+    Float16,
     Float32,
     Float64,
     String,
@@ -144,11 +144,11 @@ std::ostream& operator<<(std::ostream& os, const PrimitiveDataType& dt) {
         case PrimitiveDataType::Int8:   os << "int8";   return os;
         case PrimitiveDataType::Int16:  os << "int16";  return os;
         case PrimitiveDataType::Int32:  os << "int32";  return os;
-        case PrimitiveDataType::Int64:  os << "int64";  return os;
         case PrimitiveDataType::Uint8:  os << "uint8";  return os;
         case PrimitiveDataType::Uint16: os << "uint16"; return os;
         case PrimitiveDataType::Uint32: os << "uint32"; return os;
         case PrimitiveDataType::Uint64: os << "uint64"; return os;
+        case PrimitiveDataType::Float16:os << "float16";return os;
         case PrimitiveDataType::Float32:os << "float32";return os;
         case PrimitiveDataType::Float64:os << "float64";return os;
         case PrimitiveDataType::Bool:os    << "bool";   return os;
