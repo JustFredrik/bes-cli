@@ -22,9 +22,9 @@ public:
         std::ostringstream out;
         for (const auto &s : ast.structDeclarations)
         {
-            out << generate_struct_jsdoc(s);
-            out << generate_struct_signature(s);
-            out << generate_struct_field_assignments(s);
+            out << generate_struct_jsdoc(*s);
+            out << generate_struct_signature(*s);
+            out << generate_struct_field_assignments(*s);
             out << "}\n";
             out << "\n\n";
         }
@@ -163,6 +163,14 @@ public:
             out << s.fields[i].name << (i < fieldCount - 1 ? ", " : "");
         }
         out << ") : __BES_Struct(\"" << s.name << "\"," << s.uid << ") constructor {\n";
+        return out.str();
+    }
+
+    std::string generate_encode_function(const AST &ast){
+        std::ostringstream out;
+        out << "function bes_encode(_struct) {\n";
+        
+        out << "}";
         return out.str();
     }
 };

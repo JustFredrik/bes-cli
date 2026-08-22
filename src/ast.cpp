@@ -46,8 +46,8 @@ struct AST;
 
 using DeclarationPointer = std::variant<
     std::monostate, // Invalid default value for when accessing map
-    StructDeclaration*,
-    UnionDeclaration*
+    std::shared_ptr<StructDeclaration>,
+    std::shared_ptr<UnionDeclaration>
 >;
 
 struct NamedDeclaredReference {
@@ -124,8 +124,8 @@ struct UnionMemberDeclaration {
 
 struct AST {
     std::unordered_map<std::string, DeclarationPointer> declarationLookup;
-    std::vector<UnionDeclaration> unionDeclarations;
-    std::vector<StructDeclaration> structDeclarations;
+    std::vector<std::shared_ptr<UnionDeclaration>> unionDeclarations;
+    std::vector<std::shared_ptr<StructDeclaration>> structDeclarations;
 };
 
 

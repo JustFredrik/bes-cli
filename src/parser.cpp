@@ -293,14 +293,14 @@ FieldDataType parse_field_data_type(std::vector<Token> &tokens, int &i, std::uno
         {
             throw UndeclaredReferenceError(fieldData);
         }
-        else if (std::holds_alternative<StructDeclaration *>(declarationPointer))
+        else if (std::holds_alternative<std::shared_ptr<StructDeclaration>>(declarationPointer))
         {
             d = FieldDataType{NamedDeclaredReference{
                 fieldData.lexeme,
                 DeclarationType::Struct,
                 declarationPointer}};
         }
-        else if (std::holds_alternative<UnionDeclaration *>(declarationPointer))
+        else if (std::holds_alternative<std::shared_ptr<UnionDeclaration>>(declarationPointer))
         {
             d = FieldDataType{NamedDeclaredReference{
                 fieldData.lexeme,
@@ -379,22 +379,22 @@ AST parse(std::vector<Token> &tokens)
 
         if (t.lexeme == "struct")
         {
-            StructDeclaration s;
-            s.name = consume_name_declaration(tokens, i, nameLookup).lexeme;
-            s.uid = parse_uid(tokens, i, uidLookup, s.name);
+            auto s = std::make_shared<StructDeclaration>();
+            s->name = consume_name_declaration(tokens, i, nameLookup).lexeme;
+            s->uid = parse_uid(tokens, i, uidLookup, s->name);
             consume(tokens, i, TokenType::LeftCurlyBrace);
-            s.fields = parse_field_declarations(tokens, i, root.declarationLookup);
-            root.declarationLookup[std::string(s.name)] = &s;
+            s->fields = parse_field_declarations(tokens, i, root.declarationLookup);
+            root.declarationLookup[std::string(s->name)] = s;
             root.structDeclarations.push_back(std::move(s));
         }
         else if (t.lexeme == "union")
         {
-            UnionDeclaration u;
-            u.name = consume_name_declaration(tokens, i, nameLookup).lexeme;
-            u.uid = parse_uid(tokens, i, uidLookup, u.name);
+            auto u = std::make_shared<UnionDeclaration>();
+            u->name = consume_name_declaration(tokens, i, nameLookup).lexeme;
+            u->uid = parse_uid(tokens, i, uidLookup, u->name);
             consume(tokens, i, TokenType::LessThan);
-            u.members = parse_union_members(tokens, i, root.declarationLookup);
-            root.declarationLookup[std::string(u.name)] = &u;
+            u->members = parse_union_members(tokens, i, root.declarationLookup);
+            root.declarationLookup[std::string(u->name)] = u;
             root.unionDeclarations.push_back(std::move(u));
         }
         else if (t.type == TokenType::EndOfFile)
