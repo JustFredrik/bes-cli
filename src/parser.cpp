@@ -7,7 +7,7 @@
 #include "ast.cpp"
 #include "token.cpp"
 #include "errors.cpp"
-#include "utils/hash.cpp"
+#include "utils/fnv1a.cpp"
 
 FieldDeclaration parse_field_declaration(std::vector<Token> &tokens, int &i, std::unordered_map<std::string, bool> &nameLookup, std::unordered_map<int, bool> &uidLookup, int &fieldIdInc, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
 FieldDataType parse_field_data_type(std::vector<Token> &tokens, int &i, std::unordered_map<std::string, DeclarationPointer> declarationLookup);
@@ -172,7 +172,7 @@ int parse_uid(std::vector<Token> &tokens, int &i, std::unordered_map<int, bool> 
         return uid;
     }
     // Dynamic id
-    uint16_t hashDeclarationName = fnv1a_hash_u16(std::string(declarationName));
+    uint16_t hashDeclarationName = fnv1a_hash_uint16(std::string(declarationName));
     while (uidLookup[int(hashDeclarationName)])
     {
         hashDeclarationName += 1;
