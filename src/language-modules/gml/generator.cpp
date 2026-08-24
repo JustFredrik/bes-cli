@@ -191,12 +191,25 @@ public:
 
     std::string generate_dataType_encoding(const FixedLengthList &fl, const std::string &accessor, int ind)
     {
-        return indent(ind) + "// TODO Implement fixed length list encoding \n";
+        std::ostringstream out;
+        out << indent(ind) << "// Fixed Length List (" << fl.length << ")\n";
+        for (int i = 0; i < fl.length; i++)
+        {
+            out << generate_dataType_encoding(fl.dataType, accessor + "[" + std::to_string(i) + "]", ind + 1);
+        }
+        return out.str();
     }
 
-    std::string generate_dataType_encoding(const DynamicLengthList &fl, const std::string &accessor, int ind)
+    std::string generate_dataType_encoding(const DynamicLengthList &dl, const std::string &accessor, int ind)
     {
-        return indent(ind) + "// TODO Implement dynamic length list encoding \n";
+        std::ostringstream out;
+        out << indent(ind) << "// Dynamic Length List\n";
+        out << indent(ind) << "var _i = 0, _len = array_length(" << accessor << ");\n"
+            << indent(ind) << "repeat(_len) {\n";
+        out << generate_dataType_encoding(dl.dataType, accessor + "[_i]", ind + 1);
+        out << indent(ind) << "_i++\n"
+            << indent(ind) << "}\n";
+        return out.str();
     }
 
     std::string generate_dataType_encoding(const AnonymousStruct &s, const std::string &accessor, std::string_view fieldName, int ind)
@@ -233,6 +246,35 @@ public:
             out << "// TODO implement\n";
         }
         return out.str();
+    }
+
+    std::string generate_dataType_encoding(const FieldDataType &dataType, const std::string &accessor, const int ind)
+    {
+        if (const auto *p = std::get_if<PrimitiveDataType>(&dataType))
+        {
+            return generate_dataType_encoding(*p, std::string(accessor), ind);
+        }
+        else if (const auto *p = std::get_if<std::unique_ptr<FixedLengthList>>(&dataType))
+        {
+            return generate_dataType_encoding(**p, std::string(accessor), ind);
+        }
+        else if (const auto *p = std::get_if<std::unique_ptr<DynamicLengthList>>(&dataType))
+        {
+            return generate_dataType_encoding(**p, std::string(accessor), ind);
+        }
+        else if (const auto *p = std::get_if<std::unique_ptr<AnonymousStruct>>(&dataType))
+        {
+            return generate_dataType_encoding(**p, std::string(accessor), "SOMETHING", ind);
+        }
+        else if (const auto *p = std::get_if<std::unique_ptr<AnonymousUnion>>(&dataType))
+        {
+            return generate_dataType_encoding(**p, std::string(accessor), ind);
+        }
+        else if (const auto *p = std::get_if<NamedDeclaredReference>(&dataType))
+        {
+            return generate_dataType_encoding(*p, std::string(accessor), ind);
+        }
+        return indent(ind) + "// Not implmented data type\n";
     }
 
     std::string generate_field_encoding(const FieldDeclaration &f, std::string_view accessor, int ind)
