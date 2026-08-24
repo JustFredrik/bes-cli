@@ -1,13 +1,15 @@
 #pragma once
 #include "../ast.cpp"
 
-struct GeneratedData {
+struct GeneratedData
+{
     std::string data;
     std::string languageId;
     std::string extension;
 };
 
-class LanguageGenerator {
+class LanguageGenerator
+{
 
 private:
     std::string id;
@@ -15,7 +17,7 @@ private:
     std::string fileExtension;
 
 public:
-    LanguageGenerator(std:: string id, std::string name, std::string fileExtension)
+    LanguageGenerator(std::string id, std::string name, std::string fileExtension)
         : id(id), name(name), fileExtension(fileExtension) {}
 
     virtual ~LanguageGenerator() = default;
@@ -25,5 +27,5 @@ public:
     std::string getDefaultFileExtension() { return fileExtension; }
 
     // Generator method
-    virtual GeneratedData generate(const AST& ast) = 0;
+    virtual GeneratedData generate(const AST &ast) = 0;
 };

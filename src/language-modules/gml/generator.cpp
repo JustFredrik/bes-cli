@@ -159,11 +159,13 @@ public:
         }
     }
 
-    std::string generate_uid_enum(const AST &ast){
+    std::string generate_uid_enum(const AST &ast)
+    {
         std::ostringstream out;
         out << "enum BES_UID {\n";
-        for(const auto& s : ast.structDeclarations) {
-            out << indent(1) + std::string(s->name) + " = " + std::to_string(s->uid) + ": \n";         
+        for (const auto &s : ast.structDeclarations)
+        {
+            out << indent(1) + std::string(s->name) + " = " + std::to_string(s->uid) + ": \n";
         }
         out << "}\n";
         return out.str();
@@ -182,80 +184,107 @@ public:
         return out.str();
     }
 
-    std::string generate_dataType_encoding(const PrimitiveDataType& d, const std::string& accessor, int ind) {
-        return indent(ind) + "buffer_write(_buff, " + primitive_data_type_to_gml_buffer_type(d) + ", " + std::string(accessor) +");\n";
+    std::string generate_dataType_encoding(const PrimitiveDataType &d, const std::string &accessor, int ind)
+    {
+        return indent(ind) + "buffer_write(_buff, " + primitive_data_type_to_gml_buffer_type(d) + ", " + std::string(accessor) + ");\n";
     }
 
-    std::string generate_dataType_encoding(const FixedLengthList& fl, const std::string& accessor, int ind) {
+    std::string generate_dataType_encoding(const FixedLengthList &fl, const std::string &accessor, int ind)
+    {
         return indent(ind) + "// TODO Implement fixed length list encoding \n";
     }
 
-    std::string generate_dataType_encoding(const DynamicLengthList& fl, const std::string& accessor, int ind) {
+    std::string generate_dataType_encoding(const DynamicLengthList &fl, const std::string &accessor, int ind)
+    {
         return indent(ind) + "// TODO Implement dynamic length list encoding \n";
     }
 
-    std::string generate_dataType_encoding(const AnonymousStruct& s, const std::string& accessor, std::string_view fieldName, int ind) {
+    std::string generate_dataType_encoding(const AnonymousStruct &s, const std::string &accessor, std::string_view fieldName, int ind)
+    {
         std::ostringstream out;
         out << indent(ind) << "// " << "anonymous struct: " << std::string(accessor) << "\n";
-        for (const auto& f : s.fields) {
+        for (const auto &f : s.fields)
+        {
             out << generate_field_encoding(f, accessor + "." + std::string(f.name), ind + 1);
         }
         return out.str();
     }
 
-    std::string generate_dataType_encoding(const AnonymousUnion& u, const std::string& accessor, int ind) {
+    std::string generate_dataType_encoding(const AnonymousUnion &u, const std::string &accessor, int ind)
+    {
         return indent(ind) + "// TODO Implement anonymous union encoding \n";
     }
 
-    std::string generate_dataType_encoding(const NamedDeclaredReference& ref, const std::string& accessor, int ind) {
-        
+    std::string generate_dataType_encoding(const NamedDeclaredReference &ref, const std::string &accessor, int ind)
+    {
+
         std::ostringstream out;
         out << indent(ind) << "// " << "Named declared reference: ";
-        if (const auto* p = std::get_if<std::shared_ptr<StructDeclaration>>(&ref.decPointer)) {
+        if (const auto *p = std::get_if<std::shared_ptr<StructDeclaration>>(&ref.decPointer))
+        {
             out << (**p).name << "\n";
-            for (const auto& f : (**p).fields) {
+            for (const auto &f : (**p).fields)
+            {
                 out << generate_field_encoding(f, accessor + "." + std::string(f.name), ind + 1);
             }
-        } else if (const auto* p = std::get_if<std::shared_ptr<UnionDeclaration>>(&ref.decPointer)) {
+        }
+        else if (const auto *p = std::get_if<std::shared_ptr<UnionDeclaration>>(&ref.decPointer))
+        {
             out << "// TODO implement\n";
         }
-        return out.str();    
+        return out.str();
     }
 
-    std::string generate_field_encoding(const FieldDeclaration& f, std::string_view accessor, int ind) {        
-        if(const auto* p = std::get_if<PrimitiveDataType>(&f.dataType)) {
+    std::string generate_field_encoding(const FieldDeclaration &f, std::string_view accessor, int ind)
+    {
+        if (const auto *p = std::get_if<PrimitiveDataType>(&f.dataType))
+        {
             return generate_dataType_encoding(*p, std::string(accessor), ind);
-        } else if(const auto* p = std::get_if<std::unique_ptr<FixedLengthList>>(&f.dataType)) {
+        }
+        else if (const auto *p = std::get_if<std::unique_ptr<FixedLengthList>>(&f.dataType))
+        {
             return generate_dataType_encoding(**p, std::string(accessor), ind);
-        } else if(const auto* p = std::get_if<std::unique_ptr<DynamicLengthList>>(&f.dataType)) {
+        }
+        else if (const auto *p = std::get_if<std::unique_ptr<DynamicLengthList>>(&f.dataType))
+        {
             return generate_dataType_encoding(**p, std::string(accessor), ind);
-        } else if(const auto* p = std::get_if<std::unique_ptr<AnonymousStruct>>(&f.dataType)) {
+        }
+        else if (const auto *p = std::get_if<std::unique_ptr<AnonymousStruct>>(&f.dataType))
+        {
             return generate_dataType_encoding(**p, std::string(accessor), f.name, ind);
-        } else if(const auto* p = std::get_if<std::unique_ptr<AnonymousUnion>>(&f.dataType)) {
+        }
+        else if (const auto *p = std::get_if<std::unique_ptr<AnonymousUnion>>(&f.dataType))
+        {
             return generate_dataType_encoding(**p, std::string(accessor), ind);
-        } else if(const auto* p = std::get_if<NamedDeclaredReference>(&f.dataType)) {
+        }
+        else if (const auto *p = std::get_if<NamedDeclaredReference>(&f.dataType))
+        {
             return generate_dataType_encoding(*p, std::string(accessor), ind);
         }
         return indent(ind) + "// Not implmented data type\n";
     }
 
-    std::string generate_encode_function(const AST &ast){
+    std::string generate_encode_function(const AST &ast)
+    {
         std::ostringstream out;
         out << "function bes_encode(_struct, _buff, _skip_header) {\n";
         out << "if (!_skip_header) {" << " buffer_write(_buff, buffer_u16, _struct.__bes_uid) " << "}\n";
         out << indent(1) + "switch(_struct.__bes_uid) {\n";
-        for(const auto& s : ast.structDeclarations) {
+        for (const auto &s : ast.structDeclarations)
+        {
             out << indent(2) + "case " + "BES_UID." + std::string(s->name) + ": \n";
-            for (const auto& f : s->fields) {
+            for (const auto &f : s->fields)
+            {
                 out << generate_field_encoding(f, "_struct." + std::string(f.name), 3);
             }
-            out << indent(3) + "return 1;\n";               
+            out << indent(3) + "return 1;\n";
         }
-        out << indent(1) <<"}\n}";
+        out << indent(1) << "}\n}";
         return out.str();
     }
 
-    std::string generate_decode_function(const AST &ast){
+    std::string generate_decode_function(const AST &ast)
+    {
         std::ostringstream out;
         out << "function bes_encode(_struct) {\n";
         out << "\n";
