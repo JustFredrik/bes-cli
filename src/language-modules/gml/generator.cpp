@@ -3,6 +3,7 @@
 #include "../LanguageGenerator.cpp"
 #include "static_code.cpp"
 #include "../../utils/indent.cpp"
+#include "../../utils/fnv1a.cpp"
 
 class GmlGenerator : public LanguageGenerator
 {
@@ -13,7 +14,8 @@ public:
     {
         std::ostringstream out;
         out << generate_uid_enum(ast);
-        out << STATIC_BES_STRUCT_CODE;
+        out << TYPE_CHECKERS_CODE;
+        out << BES_INTERNAL_STRUCT_CODE;
         out << generate_constructors(ast);
         out << generate_encode_function(ast);
         std::cout << out.str();
@@ -35,6 +37,12 @@ public:
             out << "\n\n";
         }
         return out.str();
+    }
+
+    std::string uvar(const std::string &var_name, const std::string &accessor)
+    {
+        // generates unique local variables to avoid nested variable collissions
+        return var_name + "_" + fnv1a_hash_hex(accessor);
     }
 
     std::string generate_struct_field_assignments(const StructDeclaration &s)
@@ -204,11 +212,11 @@ public:
     {
         std::ostringstream out;
         out << indent(ind) << "// Dynamic Length List\n";
-        out << indent(ind) << "var _i = 0, _len = array_length(" << accessor << ");\n"
-            << indent(ind) << "repeat(_len) {\n";
-        out << generate_dataType_encoding(dl.dataType, accessor + "[_i]", ind + 1);
-        out << indent(ind) << "_i++\n"
-            << indent(ind) << "}\n";
+        out << indent(ind) << "var " << uvar("_i", accessor) << " = 0, " << uvar("_len", accessor) << " = array_length(" << accessor << ");\n"
+            << indent(ind) << "repeat(" << uvar("_len", accessor) << ") {\n";
+        out << generate_dataType_encoding(dl.dataType, accessor + "[" + uvar("_i", accessor) + "]", ind + 1);
+        out << indent(ind + 1) << uvar("_i", accessor) << "++;\n"
+            << indent(ind) << "};\n";
         return out.str();
     }
 
