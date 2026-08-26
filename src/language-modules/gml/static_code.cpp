@@ -70,4 +70,13 @@ function is_float32(n){
 function is_float64(n){
 	return is_numeric(n) && abs(n) < 1.797693134862315708145274237317043567981 * power(10, 308);
 }
+
+///@desc This function returns wether a given variable is a BES struct (true or false) or not.
+///@param {Any} n The argument to check.
+///@param {Enum.BES_UID} struct_uid The enum UID value of the struct type to check for, or undefined for any. 
+function is_bes_struct(n, struct_uid = undefined){
+	if (!is_struct(n)) return false;
+	if (struct_uid == undefined) return true;
+	return (n.__bes_uid == struct_uid);
+}
 )";
