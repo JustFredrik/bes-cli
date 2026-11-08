@@ -173,7 +173,7 @@ public:
         out << "enum BES_UID {\n";
         for (const auto &s : ast.structDeclarations)
         {
-            out << indent(1) + std::string(s->name) + " = " + std::to_string(s->uid) + ": \n";
+            out << indent(1) + std::string(s->name) + " = " + std::to_string(s->uid) + ", \n";
         }
         out << "}\n";
         return out.str();
