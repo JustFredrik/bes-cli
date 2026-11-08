@@ -14,6 +14,7 @@ struct EVENT_PLAYER_LEAVE {
     userId : userIdType
 }
 
+union Event <EVENT_PLAYER_JOIN, EVENT_PLAYER_LEAVE>
 
 /* 
 This is a multiline
@@ -22,12 +23,14 @@ span multiple lines
 */
 
 struct ENTITY_DINO {
+    is_host : bool
     id :   uint64
     x: float32
     y: float32
     vspd: float32
     hspd :   float32
     stateId: uint8
+    firstEvent: Event
 }
 
 struct Vector {
@@ -61,7 +64,7 @@ struct DATA_SAVE_GAME @0x34fa {
     levelData: Vector[LEVEL_COUNT]
     playTime: uint32[3] // fixed size array 
     levelScore : uint16[] // dynamically sized array (vector)
+    coin : ENTITY_COIN
 }
 
-union Event <EVENT_PLAYER_JOIN, EVENT_PLAYER_LEAVE>
 union Entity <ENTITY_DINO, ENTITY_COIN>
